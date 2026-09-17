@@ -10,12 +10,19 @@ from sklearn.preprocessing import LabelEncoder
 from statsmodels.tsa.arima.model import ARIMA
 import numpy as np
 import random # Added for simulation
+import ui_chrome
+import ui_theme
 api_key = "fjasodfsdjfekvcugdciweassl67890_99"
 
 # ----------------------------------------------------------
 # Page Setup
 # ----------------------------------------------------------
 st.set_page_config(page_title="India Road Accidents Analysis", layout="wide")
+# mark.dev paper ground, Fraunces/Inter/JetBrains Mono, vermilion accent. The
+# same base colours are mirrored in .streamlit/config.toml, which is the only
+# way to reach widgets CSS cannot touch — change one, change both.
+ui_theme.apply_theme()
+ui_chrome.apply_app_css()
 
 # ----------------------------------------------------------
 # Data Loading
@@ -121,7 +128,9 @@ with tab1:
 
     st.markdown("---")
 
-    chart_gradients = ['Greens', 'Blues']
+    # One light-to-vermilion ramp for every count-coloured chart; the
+    # alternation below is kept as-is, it just alternates between the same ramp.
+    chart_gradients = [ui_theme.sequential(), ui_theme.sequential()]
     color_idx = 0
 
     if not ds1_filtered.empty:
@@ -130,12 +139,12 @@ with tab1:
             values=severity_counts.values,
             names=severity_counts.index,
             title="Accident Severity Distribution",
-            color_discrete_sequence=[px.colors.sequential.Greens[i*2] for i in range(len(severity_counts))]
-            if color_idx == 0 else [px.colors.sequential.Blues[i*2] for i in range(len(severity_counts))]
+            color_discrete_sequence=ui_theme.colorway()
         )
         fig_severity.update_traces(textinfo='percent+label', pull=[0.05]*len(severity_counts))
-        st.plotly_chart(fig_severity, use_container_width=True)
-        color_idx = 1 - color_idx 
+        ui_theme.style_fig(fig_severity, title_font=ui_chrome.CHART_TITLE_FONT)
+        st.plotly_chart(fig_severity, use_container_width=True, theme=None)
+        color_idx = 1 - color_idx
 
     if not ds1_filtered.empty:
         vehicle_counts = ds1_filtered['Vehicle Type Involved'].value_counts().reset_index()
@@ -150,7 +159,8 @@ with tab1:
             text='Count'
         )
         fig_vehicle.update_traces(texttemplate='%{text}', textposition='outside')
-        st.plotly_chart(fig_vehicle, use_container_width=True)
+        ui_theme.style_fig(fig_vehicle, title_font=ui_chrome.CHART_TITLE_FONT)
+        st.plotly_chart(fig_vehicle, use_container_width=True, theme=None)
         color_idx = 1 - color_idx
 
     if not ds1_filtered.empty:
@@ -166,7 +176,8 @@ with tab1:
             text='Count'
         )
         fig_day.update_traces(texttemplate='%{text}', textposition='outside')
-        st.plotly_chart(fig_day, use_container_width=True)
+        ui_theme.style_fig(fig_day, title_font=ui_chrome.CHART_TITLE_FONT)
+        st.plotly_chart(fig_day, use_container_width=True, theme=None)
         color_idx = 1 - color_idx
 
     # Map & Monthly/Time charts
@@ -183,9 +194,10 @@ with tab1:
                 y=monthly_accidents.values,
                 title=f"Monthly Accidents Trend - {selected_state}",
                 labels={'x':'Month','y':'Accidents'},
-                color_discrete_sequence=['#00CC96']
+                color_discrete_sequence=ui_theme.colorway()
             )
-            st.plotly_chart(fig_month, use_container_width=True)
+            ui_theme.style_fig(fig_month, title_font=ui_chrome.CHART_TITLE_FONT)
+            st.plotly_chart(fig_month, use_container_width=True, theme=None)
             color_idx = 1 - color_idx
 
     if selected_state != "All" and not ds5.empty:
@@ -203,7 +215,8 @@ with tab1:
                 color_continuous_scale=chart_gradients[color_idx],
                 title=f"Accidents by Time of Day - {selected_state}"
             )
-            st.plotly_chart(fig_time, use_container_width=True)
+            ui_theme.style_fig(fig_time, title_font=ui_chrome.CHART_TITLE_FONT)
+            st.plotly_chart(fig_time, use_container_width=True, theme=None)
             color_idx = 1 - color_idx
 
     st.subheader("🚦 Top Accident Causes in Million+ Cities")
@@ -221,7 +234,8 @@ with tab1:
                 color_continuous_scale=chart_gradients[color_idx],
                 title="Top Accident Causes"
             )
-            st.plotly_chart(fig_cause, use_container_width=True)
+            ui_theme.style_fig(fig_cause, title_font=ui_chrome.CHART_TITLE_FONT)
+            st.plotly_chart(fig_cause, use_container_width=True, theme=None)
             color_idx = 1 - color_idx
 
     st.subheader("📈 Long-term Accident Trends in India")
@@ -231,11 +245,12 @@ with tab1:
             x='Years',
             y='Total Number of Road Accidents (in numbers)',
             markers=True,
-            color_discrete_sequence=['#1f77b4'],
+            color_discrete_sequence=ui_theme.colorway(),
             title="Total Road Accidents Over Years"
         )
         fig_trend.update_layout(xaxis_title="Year", yaxis_title="Accidents", hovermode="x unified")
-        st.plotly_chart(fig_trend, use_container_width=True)
+        ui_theme.style_fig(fig_trend, title_font=ui_chrome.CHART_TITLE_FONT)
+        st.plotly_chart(fig_trend, use_container_width=True, theme=None)
 
     if 'Number of Fatalities' in ds1_filtered.columns:
         st.subheader("⚠️ Severity vs Fatalities Scatter Plot")
@@ -244,11 +259,12 @@ with tab1:
             x='Number of Fatalities',
             y='Number of Casualties',
             color='Number of Fatalities',
-            color_continuous_scale=['#1f77b4','#00CC96'],
+            color_continuous_scale=ui_theme.sequential(),
             hover_data=['State Name','City Name'],
-            title="Fatalities vs Casualties (Blue → Green Gradient)"
+            title="Fatalities vs Casualties (Light → Vermilion Gradient)"
         )
-        st.plotly_chart(fig_scatter, use_container_width=True)
+        ui_theme.style_fig(fig_scatter, title_font=ui_chrome.CHART_TITLE_FONT)
+        st.plotly_chart(fig_scatter, use_container_width=True, theme=None)
 
     st.markdown("---")
     st.header("🤖 Accident Severity Prediction (ML Feature)")
@@ -329,14 +345,17 @@ with tab2:
     top_states = reduce_state.sort_values('Number of Fatalities', ascending=False).head(5)
     fig_top_states = px.bar(top_states, x='State Name', y=['Number of Fatalities','Number of Casualties'],
                             title="Top 5 States by Fatalities & Casualties",
-                            color_discrete_sequence=px.colors.qualitative.Plotly)
-    st.plotly_chart(fig_top_states, use_container_width=True)
+                            color_discrete_sequence=ui_theme.colorway())
+    ui_theme.style_fig(fig_top_states, title_font=ui_chrome.CHART_TITLE_FONT)
+    st.plotly_chart(fig_top_states, use_container_width=True, theme=None)
 
     st.markdown("### 📈 Trend Over Years")
     if not reduce_year.empty:
         fig_trend_years = px.line(reduce_year, x='Year', y=['Number of Fatalities','Number of Casualties'],
-                                  markers=True, title="Yearly Trend")
-        st.plotly_chart(fig_trend_years, use_container_width=True)
+                                  markers=True, title="Yearly Trend",
+                                  color_discrete_sequence=ui_theme.colorway())
+        ui_theme.style_fig(fig_trend_years, title_font=ui_chrome.CHART_TITLE_FONT)
+        st.plotly_chart(fig_trend_years, use_container_width=True, theme=None)
 
 # ----------------------------------------------------------
 # TAB 3: ADVANCED FORECASTING + SCENARIO PREDICTION
@@ -366,16 +385,19 @@ with tab3:
         st.metric("💥 Predicted Casualties", f"{int(forecast_casual):,}")
 
         fig_forecast = px.line(forecast_df, x='Year', y=['Number of Fatalities','Number of Casualties'],
-                               markers=True, title="Historical vs Predicted Trends")
+                               markers=True, title="Historical vs Predicted Trends",
+                               color_discrete_sequence=ui_theme.colorway())
         fig_forecast.add_scatter(
             x=[next_year,next_year],
             y=[forecast_fatal,forecast_casual],
             mode='markers+text',
             text=["Predicted Fatalities","Predicted Casualties"],
             textposition="top center",
-            marker=dict(size=12, color=['red','orange'])
+            # each predicted point wears its own series' colour
+            marker=dict(size=12, color=ui_theme.colorway()[:2])
         )
-        st.plotly_chart(fig_forecast, use_container_width=True)
+        ui_theme.style_fig(fig_forecast, title_font=ui_chrome.CHART_TITLE_FONT)
+        st.plotly_chart(fig_forecast, use_container_width=True, theme=None)
     else:
         st.warning("Insufficient yearly data for ARIMA forecasting (need at least 4 years).")
 
@@ -482,7 +504,7 @@ with tab4:
             "base_accident_risk": 70,  # Simulated historical risk score
             "simulated_traffic": "High",
             "distance_km": 590,
-            "color": "red"
+            "color": ui_chrome.MAP_BAD
         }
 
         # Route 2: Inland Route (NH 48 via Pune)
@@ -494,7 +516,7 @@ with tab4:
             "base_accident_risk": 45, # Simulated historical risk score
             "simulated_traffic": "Low",
             "distance_km": 650,
-            "color": "green"
+            "color": ui_chrome.MAP_OK
         }
         
         return [route1, route2]
